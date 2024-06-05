@@ -31,7 +31,8 @@ namespace swf {
 		void createLogicalDevice();
 
 		// Helpers
-		void printPhysicalDeviceInfo(vk::PhysicalDeviceProperties& deviceProps) const;
+		int pickPhysicalDevice(const std::vector<vk::PhysicalDevice>& physicalDeviceVec) const;
+		void printPhysicalDeviceInfo(const vk::PhysicalDeviceProperties& deviceProps) const;
 
 	};
 

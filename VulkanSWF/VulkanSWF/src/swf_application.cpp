@@ -47,10 +47,26 @@ namespace swf {
 	void SWFApplication::createPhysicalDevice() {
 		std::cout << "Searching for physical devices..." << std::endl << std::endl;
 		std::vector<vk::PhysicalDevice> physicalDeviceVec = vulkanInstance.enumeratePhysicalDevices();
+		if (physicalDeviceVec.size() < 1) {
+			throw std::runtime_error("ERROR: 0 physical devices detected!");
+		}
 
+		int deviceIndex = pickPhysicalDevice(physicalDeviceVec);
+
+		physicalDevice = physicalDeviceVec[deviceIndex];
+		std::cout << "Picked physical device:" << std::endl;
+		printPhysicalDeviceInfo(physicalDevice.getProperties());
+	}
+
+	void SWFApplication::createLogicalDevice() {
+
+	}
+
+	// -------- Helper Functions ----------
+
+	int SWFApplication::pickPhysicalDevice(const std::vector<vk::PhysicalDevice>& physicalDeviceVec) const {
 		int deviceIndex = 0;
-		if (physicalDeviceVec.size() > 1
-			) {
+		if (physicalDeviceVec.size() > 1) {
 			std::cout << "Found multiple devices" << std::endl;
 			std::cout << "Pick a device (0 - " << physicalDeviceVec.size() - 1 << "): " << std::endl;
 			for (int i = 0; i < physicalDeviceVec.size(); ++i) {
@@ -72,22 +88,10 @@ namespace swf {
 			}
 			std::cout << std::endl;
 		}
-		else if (physicalDeviceVec.size() < 1) {
-			throw std::runtime_error("ERROR: 0 physical devices detected!");
-		}
-
-		physicalDevice = physicalDeviceVec[deviceIndex];
-		std::cout << "Picked physical device:" << std::endl;
-		printPhysicalDeviceInfo(physicalDevice.getProperties());
+		return deviceIndex;
 	}
 
-	void SWFApplication::createLogicalDevice() {
-
-	}
-
-	// -------- Helper Functions ----------
-
-	void SWFApplication::printPhysicalDeviceInfo(vk::PhysicalDeviceProperties& deviceProps) const {
+	void SWFApplication::printPhysicalDeviceInfo(const vk::PhysicalDeviceProperties& deviceProps) const {
 		std::cout << "    Device Name: " << deviceProps.deviceName << std::endl;
 		std::cout << "    Device ID: " << deviceProps.deviceID << std::endl;
 		std::cout << "    Vulkan API Version:" << VK_VERSION_MAJOR(deviceProps.apiVersion) << "."

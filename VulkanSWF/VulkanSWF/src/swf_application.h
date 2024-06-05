@@ -21,13 +21,14 @@ namespace swf {
 		// Private variables
 		const std::string applicationName;
 
-		vk::Device logicalDevice;
-		vk::PhysicalDevice physicalDevice;
 		vk::Instance vulkanInstance;
+		vk::PhysicalDevice physicalDevice;
+		vk::Device logicalDevice;
+		uint32_t computeQueueFamilyIndex;
 
 		// Private methods
 		void createVulkanInstance();
-		void createPhysicalDevice();
+		void pickPhysicalDevice();
 		void createLogicalDevice();
 
 		// Helpers

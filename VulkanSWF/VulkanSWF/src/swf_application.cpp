@@ -44,7 +44,7 @@ namespace swf {
 		vulkanInstance = vk::createInstance(instanceCreateInfo);
 	}
 
-	void SWFApplication::createPhysicalDevice() {
+	void SWFApplication::pickPhysicalDevice() {
 		std::cout << "Searching for physical devices..." << std::endl << std::endl;
 		std::vector<vk::PhysicalDevice> physicalDeviceVec = vulkanInstance.enumeratePhysicalDevices();
 		if (physicalDeviceVec.size() < 1) {
@@ -59,7 +59,30 @@ namespace swf {
 	}
 
 	void SWFApplication::createLogicalDevice() {
+		std::vector<vk::QueueFamilyProperties> queueFamilyProperties = physicalDevice.getQueueFamilyProperties();
 
+		computeQueueFamilyIndex = 0;
+		for (const vk::QueueFamilyProperties& prop : queueFamilyProperties) {
+			if (prop.queueFlags & vk::QueueFlagBits::eCompute) {
+				break;
+			}
+			++computeQueueFamilyIndex;
+		}
+
+		float queuePriority = 1.0f;
+		vk::DeviceQueueCreateInfo deviceQueueCreateInfo{
+			vk::DeviceQueueCreateFlags(),	// Flags
+			computeQueueFamilyIndex,		// Queue Family Index
+			1,								// Queue Count
+			&queuePriority,					// Queue Priority
+		};
+
+		vk::DeviceCreateInfo deviceCreateInfo{
+			vk::DeviceCreateFlags(),		// Flags
+			deviceQueueCreateInfo			// Device Queue Create Info
+		};
+
+		logicalDevice = physicalDevice.createDevice(deviceCreateInfo);
 	}
 
 	// -------- Helper Functions ----------

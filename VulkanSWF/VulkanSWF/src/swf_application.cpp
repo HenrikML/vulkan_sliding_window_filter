@@ -51,7 +51,7 @@ namespace swf {
 			throw std::runtime_error("ERROR: 0 physical devices detected!");
 		}
 
-		int deviceIndex = pickPhysicalDevice(physicalDeviceVec);
+		int deviceIndex = pickPhysicalDeviceHelper(physicalDeviceVec);
 
 		physicalDevice = physicalDeviceVec[deviceIndex];
 		std::cout << "Picked physical device:" << std::endl;
@@ -87,7 +87,7 @@ namespace swf {
 
 	// -------- Helper Functions ----------
 
-	int SWFApplication::pickPhysicalDevice(const std::vector<vk::PhysicalDevice>& physicalDeviceVec) const {
+	int SWFApplication::pickPhysicalDeviceHelper(const std::vector<vk::PhysicalDevice>& physicalDeviceVec) const {
 		int deviceIndex = 0;
 		if (physicalDeviceVec.size() > 1) {
 			std::cout << "Found multiple devices" << std::endl;

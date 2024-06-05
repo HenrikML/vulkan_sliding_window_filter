@@ -43,6 +43,9 @@ if (WIN32)
     )
 
     target_link_directories(${PROJECT_NAME} PUBLIC ${Vulkan_LIBRARIES})
+
+    target_link_libraries(${PROJECT_NAME} PUBLIC Vulkan::Vulkan)
 elseif (UNIX)
     target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/src)
+    target_link_libraries(${PROJECT_NAME} PUBLIC Vulkan::Vulkan Vulkan::Headers)
 endif()

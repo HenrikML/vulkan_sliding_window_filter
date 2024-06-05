@@ -3,6 +3,10 @@
 #include <vulkan/vulkan.hpp>
 #include <string>
 
+#ifndef DEBUG
+#define DEBUG
+#endif
+
 namespace swf {
 
 	class SWFApplication {

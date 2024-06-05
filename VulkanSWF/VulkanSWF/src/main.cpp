@@ -5,6 +5,7 @@
 
 #include "swf_application.h"
 
+
 int main() {
 	
 	swf::SWFApplication application{"SWF"};

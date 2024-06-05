@@ -1,13 +1,31 @@
 #pragma once
 
+#include <vulkan/vulkan.hpp>
+#include <string>
+
 namespace swf {
 
 	class SWFApplication {
 	public:
-		SWFApplication();
+		// Public variables
+
+		// Public methods
+		SWFApplication(std::string applicationName);
 		~SWFApplication();
 		void execute();
 	private:
+		// Private variables
+		const std::string applicationName;
+
+		vk::Device logicalDevice;
+		vk::PhysicalDevice physicalDevice;
+		vk::Instance vulkanInstance;
+
+		// Private methods
+		void createVulkanInstance();
+		void createPhysicalDevice();
+		void createLogicalDevice();
+
 	};
 
 }

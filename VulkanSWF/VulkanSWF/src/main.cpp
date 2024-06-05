@@ -7,7 +7,7 @@
 
 int main() {
 	
-	swf::SWFApplication application{};
+	swf::SWFApplication application{"SWF"};
 	
 	try {
 		application.execute();

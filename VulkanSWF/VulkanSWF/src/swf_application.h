@@ -30,6 +30,9 @@ namespace swf {
 		void createPhysicalDevice();
 		void createLogicalDevice();
 
+		// Helpers
+		void printPhysicalDeviceInfo(vk::PhysicalDeviceProperties& deviceProps) const;
+
 	};
 
 }

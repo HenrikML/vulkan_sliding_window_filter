@@ -6,7 +6,7 @@ namespace swf {
 	SWFApplication::SWFApplication(std::string applicationName) 
 		: applicationName(applicationName) {
 		createVulkanInstance();
-		createPhysicalDevice();
+		pickPhysicalDevice();
 		createLogicalDevice();
 	}
 
@@ -14,7 +14,11 @@ namespace swf {
 		logicalDevice.destroy();
 		vulkanInstance.destroy();
 	}
-
+	
+	void SWFApplication::configureKernel(SWFKernelConfiguration& configuration) {
+		kernel.setKernel(configuration);
+	}
+	
 	void SWFApplication::execute() {
 	}
 

@@ -3,11 +3,15 @@
 #include <vulkan/vulkan.hpp>
 #include <string>
 
+#include "swf_kernel.h"
+
 #ifndef DEBUG
 #define DEBUG
 #endif
 
 namespace swf {
+
+	// TODO: SWFKernel
 
 	class SWFApplication {
 	public:
@@ -16,6 +20,8 @@ namespace swf {
 		// Public methods
 		SWFApplication(std::string applicationName);
 		~SWFApplication();
+
+		void configureKernel(SWFKernelConfiguration& configuration);
 		void execute();
 	private:
 		// Private variables
@@ -25,6 +31,8 @@ namespace swf {
 		vk::PhysicalDevice physicalDevice;
 		vk::Device logicalDevice;
 		uint32_t computeQueueFamilyIndex;
+
+		SWFKernel kernel;
 
 		// Private methods
 		void createVulkanInstance();

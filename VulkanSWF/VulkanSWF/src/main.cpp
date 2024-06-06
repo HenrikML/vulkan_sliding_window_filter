@@ -9,7 +9,13 @@
 int main() {
 	
 	swf::SWFApplication application{"SWF"};
-	
+
+	swf::SWFKernelConfiguration kernelConf = {};
+	kernelConf.kernelSize = 2;
+	kernelConf.kernelType = swf::SWF_KERNEL_TYPE_BOX;
+
+	application.configureKernel(kernelConf);
+
 	try {
 		application.execute();
 	}

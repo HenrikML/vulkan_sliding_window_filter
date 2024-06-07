@@ -4,6 +4,7 @@
 #include <string>
 
 #include "swf_kernel.h"
+#include "stb_image.h"
 
 #ifndef DEBUG
 #define DEBUG
@@ -21,8 +22,7 @@ namespace swf {
 		SWFApplication(std::string applicationName);
 		~SWFApplication();
 
-		void configureKernel(const SWFKernelConfiguration& configuration);
-		void execute();
+		void execute(const char* imagePath, const SWFKernelConfiguration* kernelConf);
 	private:
 		// Private variables
 		const std::string applicationName;

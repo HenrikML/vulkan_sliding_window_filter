@@ -4,7 +4,7 @@
 
 namespace swf {
 	
-	enum SWFKernelType {
+	enum class SWFKernelType {
 		SWF_KERNEL_TYPE_BOX = 0,
 		SWF_KERNEL_TYPE_GAUSSIAN = 1
 	};
@@ -21,9 +21,9 @@ namespace swf {
 		~SWFKernel();
 		
 		float* getKernel() const { return kernel; };
-		uint16_t getKernelSize() const { return kernelWidth; };
+		uint16_t getKernelWidth() const { return kernelWidth; };
 
-		void setKernel(const SWFKernelConfiguration& configuration);
+		void setKernel(const SWFKernelConfiguration* configuration);
 		
 	private:
 		// Private Variables
@@ -31,8 +31,8 @@ namespace swf {
 		uint16_t kernelWidth;
 
 		// Private Methods
-		void createBoxFilter(const uint8_t& size);
-		void createGaussianFilter(const uint8_t& size, const float& sigma);
+		void createBoxFilter();
+		void createGaussianFilter(const float& sigma);
 		void printKernel();
 
 	};

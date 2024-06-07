@@ -12,12 +12,10 @@ int main() {
 
 	swf::SWFKernelConfiguration kernelConf = {};
 	kernelConf.kernelRadius = 2;
-	kernelConf.kernelType = swf::SWF_KERNEL_TYPE_BOX;
-
-	application.configureKernel(kernelConf);
+	kernelConf.kernelType = swf::SWFKernelType::SWF_KERNEL_TYPE_BOX;
 
 	try {
-		application.execute();
+		application.execute("  ", &kernelConf);
 	}
 	catch (const std::exception& e) {
 		std::cerr << e.what() << std::endl;

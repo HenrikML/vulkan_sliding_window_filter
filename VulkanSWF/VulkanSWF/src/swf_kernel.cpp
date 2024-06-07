@@ -3,39 +3,40 @@
 
 namespace swf {
 	SWFKernel::SWFKernel() {
-		kernelWidth = UINT16_MAX;
+		kernelWidth = 1;
+		kernel = new float[kernelWidth];
+		createBoxFilter();
 	}
 
 	SWFKernel::~SWFKernel() {
 		delete[] kernel;
 	}
 
-	void SWFKernel::setKernel(const SWFKernelConfiguration& configuration) {
-		if (kernelWidth != configuration.kernelRadius * 2 + 1) {
-			if (kernelWidth < UINT16_MAX) {
-				delete[] kernel;
-			}
-			kernelWidth = configuration.kernelRadius * 2 + 1;
+	void SWFKernel::setKernel(const SWFKernelConfiguration* configuration) {
+		uint16_t newWidth = configuration->kernelRadius * 2 + 1;
+		if (kernelWidth != newWidth) {
+			delete[] kernel;
+			kernelWidth = newWidth;
 			kernel = new float[kernelWidth * kernelWidth];
 		}
 
-		switch (configuration.kernelType) {
-		case SWF_KERNEL_TYPE_BOX:
-			createBoxFilter(configuration.kernelRadius);
+		switch (configuration->kernelType) {
+		case SWFKernelType::SWF_KERNEL_TYPE_BOX:
+			createBoxFilter();
 			break;
 
-		case SWF_KERNEL_TYPE_GAUSSIAN:
-			createGaussianFilter(configuration.kernelRadius, configuration.sigma);
+		case SWFKernelType::SWF_KERNEL_TYPE_GAUSSIAN:
+			createGaussianFilter(configuration->sigma);
 			break;
 
 		default:
-			createBoxFilter(0);
+			createBoxFilter();
 			break;
 		}
 
 	}
 
-	void SWFKernel::createBoxFilter(const uint8_t& size) {
+	void SWFKernel::createBoxFilter() {
 
 		float avg = 1 / float( (kernelWidth) * (kernelWidth) );
 
@@ -49,9 +50,9 @@ namespace swf {
 		printKernel();
 	}
 
-	void SWFKernel::createGaussianFilter(const uint8_t& size, const float& sigma) {
+	void SWFKernel::createGaussianFilter(const float& sigma) {
 		// TODO: Create gaussian filter
-		createBoxFilter(size); // Remove this once gaussian filter is implemented
+		createBoxFilter(); // Remove this once gaussian filter is implemented
 	}
 
 	void SWFKernel::printKernel() {

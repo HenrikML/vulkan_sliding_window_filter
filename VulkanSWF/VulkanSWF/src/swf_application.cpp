@@ -15,11 +15,9 @@ namespace swf {
 		vulkanInstance.destroy();
 	}
 	
-	void SWFApplication::configureKernel(const SWFKernelConfiguration& configuration) {
-		kernel.setKernel(configuration);
-	}
 	
-	void SWFApplication::execute() {
+	void SWFApplication::execute(const char* imagePath, const SWFKernelConfiguration* kernelConf) {
+		// TODO: Create input/output buffers
 	}
 
 

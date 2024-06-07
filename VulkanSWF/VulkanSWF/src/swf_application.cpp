@@ -15,7 +15,7 @@ namespace swf {
 		vulkanInstance.destroy();
 	}
 	
-	void SWFApplication::configureKernel(SWFKernelConfiguration& configuration) {
+	void SWFApplication::configureKernel(const SWFKernelConfiguration& configuration) {
 		kernel.setKernel(configuration);
 	}
 	

@@ -8,7 +8,7 @@ namespace swf {
 	SWFKernel::~SWFKernel() {
 	}
 
-	void SWFKernel::setKernel(SWFKernelConfiguration& configuration) {
+	void SWFKernel::setKernel(const SWFKernelConfiguration& configuration) {
 		kernelSize = configuration.kernelSize;
 
 		switch (configuration.kernelType) {

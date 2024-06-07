@@ -21,7 +21,7 @@ namespace swf {
 		SWFApplication(std::string applicationName);
 		~SWFApplication();
 
-		void configureKernel(SWFKernelConfiguration& configuration);
+		void configureKernel(const SWFKernelConfiguration& configuration);
 		void execute();
 	private:
 		// Private variables

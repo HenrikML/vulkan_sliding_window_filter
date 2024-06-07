@@ -25,7 +25,7 @@ namespace swf {
 		SWFKernelData getKernel() const { return kernel; };
 		uint8_t getKernelSize() const { return kernelSize; };
 
-		void setKernel(SWFKernelConfiguration& configuration);
+		void setKernel(const SWFKernelConfiguration& configuration);
 		
 	private:
 		// Private Variables

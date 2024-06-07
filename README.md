@@ -1,1 +1,11 @@
-# vulkan_sliding_window_filter
+# Vulkan Sliding Window Filter
+
+Author: Henrik Lauronen
+
+Requirements:
+- CMake 3.25 or higher
+- Vulkan 1.3.256 or higher
+
+## Goals
+
+The aim of this project is to implement a basic image processing filter using the Vulkan API and GLSL shaders.

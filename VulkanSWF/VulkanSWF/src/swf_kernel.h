@@ -10,27 +10,25 @@ namespace swf {
 	};
 
 	struct SWFKernelConfiguration {
-		uint8_t kernelSize;			// Radius
+		uint8_t kernelRadius;
 		SWFKernelType kernelType;
 		float sigma;				// Gaussian filter only
 	};
-
-	typedef std::vector<std::vector<float>> SWFKernelData;
 	
 	class SWFKernel {
 	public:
 		SWFKernel();
 		~SWFKernel();
 		
-		SWFKernelData getKernel() const { return kernel; };
-		uint8_t getKernelSize() const { return kernelSize; };
+		float* getKernel() const { return kernel; };
+		uint16_t getKernelSize() const { return kernelWidth; };
 
 		void setKernel(const SWFKernelConfiguration& configuration);
 		
 	private:
 		// Private Variables
-		SWFKernelData kernel;
-		uint8_t kernelSize;
+		float* kernel;		// 2D kernel represented as 1D array
+		uint16_t kernelWidth;
 
 		// Private Methods
 		void createBoxFilter(const uint8_t& size);

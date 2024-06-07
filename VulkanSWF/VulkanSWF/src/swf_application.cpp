@@ -123,6 +123,6 @@ namespace swf {
 		std::cout << "    Device ID: " << deviceProps.deviceID << std::endl;
 		std::cout << "    Vulkan API Version:" << VK_VERSION_MAJOR(deviceProps.apiVersion) << "."
 			<< VK_VERSION_MINOR(deviceProps.apiVersion) << "."
-			<< VK_VERSION_PATCH(deviceProps.apiVersion) << std::endl;
+			<< VK_VERSION_PATCH(deviceProps.apiVersion) << std::endl << std::endl;
 	}
 }

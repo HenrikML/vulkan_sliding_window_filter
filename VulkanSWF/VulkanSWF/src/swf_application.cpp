@@ -1,6 +1,10 @@
 #include "swf_application.h"
 #include <iostream>
 #include <exception>
+#include <filesystem>
+
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
 
 namespace swf {
 	SWFApplication::SWFApplication(std::string applicationName) 
@@ -11,13 +15,36 @@ namespace swf {
 	}
 
 	SWFApplication::~SWFApplication() {
+		logicalDevice.destroyBuffer(outputBuffer);
+		logicalDevice.destroyBuffer(inputBuffer);
 		logicalDevice.destroy();
 		vulkanInstance.destroy();
 	}
 	
 	
 	void SWFApplication::execute(const char* imagePath, const SWFKernelConfiguration* kernelConf) {
-		// TODO: Create input/output buffers
+
+		imageData = stbi_load(imagePath, &imageWidth, &imageHeight, &imageChannels, 0);
+
+		std::cout << "Image height: " << imageHeight << std::endl;
+		std::cout << "Image width: " << imageWidth << std::endl;
+		std::cout << "Color channels: " << imageChannels << std::endl << std::endl;
+
+		const uint32_t bufferSize = imageHeight * imageWidth * imageChannels * sizeof(uint8_t);
+
+		vk::BufferCreateInfo bufferCreateInfo{
+			vk::BufferCreateFlags(),
+			bufferSize,
+			vk::BufferUsageFlagBits::eStorageBuffer,
+			vk::SharingMode::eExclusive,
+			1,
+			&computeQueueFamilyIndex
+		};
+
+		inputBuffer = logicalDevice.createBuffer(bufferCreateInfo);
+		outputBuffer = logicalDevice.createBuffer(bufferCreateInfo);
+
+		stbi_image_free(imageData);
 	}
 
 

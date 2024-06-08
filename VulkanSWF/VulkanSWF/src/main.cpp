@@ -15,7 +15,7 @@ int main() {
 	kernelConf.kernelType = swf::SWFKernelType::SWF_KERNEL_TYPE_BOX;
 
 	try {
-		application.execute("  ", &kernelConf);
+		application.execute("img\\input.jpg", &kernelConf);
 	}
 	catch (const std::exception& e) {
 		std::cerr << e.what() << std::endl;

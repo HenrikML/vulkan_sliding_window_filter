@@ -4,15 +4,12 @@
 #include <string>
 
 #include "swf_kernel.h"
-#include "stb_image.h"
 
 #ifndef DEBUG
 #define DEBUG
 #endif
 
 namespace swf {
-
-	// TODO: SWFKernel
 
 	class SWFApplication {
 	public:
@@ -34,6 +31,14 @@ namespace swf {
 
 		SWFKernel kernel;
 
+		int imageHeight;
+		int imageWidth;
+		int imageChannels;
+		unsigned char* imageData;
+
+		vk::Buffer inputBuffer;
+		vk::Buffer outputBuffer;
+
 		// Private methods
 		void createVulkanInstance();
 		void pickPhysicalDevice();
@@ -42,6 +47,7 @@ namespace swf {
 		// Helpers
 		int pickPhysicalDeviceHelper(const std::vector<vk::PhysicalDevice>& physicalDeviceVec) const;
 		void printPhysicalDeviceInfo(const vk::PhysicalDeviceProperties& deviceProps) const;
+		void readImage(char* filename);
 
 	};
 

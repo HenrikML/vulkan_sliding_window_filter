@@ -29,6 +29,7 @@ else()
 endif()
 
 file(GLOB_RECURSE SOURCES ${PROJECT_SOURCE_DIR}/src/*.cpp)
+file(COPY images/input.jpg DESTINATION img)
 
 add_executable(${PROJECT_NAME} ${SOURCES})
 

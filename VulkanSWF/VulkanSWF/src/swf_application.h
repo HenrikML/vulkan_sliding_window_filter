@@ -47,7 +47,7 @@ namespace swf {
 		
 		void createBuffers();
 		bool readImage(const char* imagePath);
-		void mapDataToMemory(unsigned char* imageData);
+		void mapDataToMemory();
 
 		// Helpers
 		int pickPhysicalDeviceHelper(const std::vector<vk::PhysicalDevice>& physicalDeviceVec) const;

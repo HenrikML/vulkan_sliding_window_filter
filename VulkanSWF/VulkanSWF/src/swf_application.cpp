@@ -28,7 +28,9 @@ namespace swf {
 			throw std::runtime_error("ERROR: Could not load image");
 		}
 
-		stbi_image_free(imageData);
+		createBuffers();
+		mapDataToMemory();
+
 	}
 
 
@@ -131,8 +133,37 @@ namespace swf {
 		outputBuffer = logicalDevice.createBuffer(bufferCreateInfo);
 	}
 
-	void SWFApplication::mapDataToMemory(unsigned char* imageData) {
+	void SWFApplication::mapDataToMemory() {
+		vk::MemoryRequirements inputBufferMemoryReq = logicalDevice.getBufferMemoryRequirements(inputBuffer);
+		vk::MemoryRequirements outputBufferMemoryReq = logicalDevice.getBufferMemoryRequirements(outputBuffer);
 
+		vk::PhysicalDeviceMemoryProperties memoryProperties = physicalDevice.getMemoryProperties();
+		uint32_t memoryTypeIndex = UINT32_MAX;
+		vk::DeviceSize memoryHeapSize = UINT64_MAX;
+
+		for (uint32_t i = 0; i < memoryProperties.memoryTypeCount; ++i) {
+			vk::MemoryType memoryType = memoryProperties.memoryTypes[i];
+			if ((memoryType.propertyFlags & vk::MemoryPropertyFlagBits::eHostVisible) &&
+				(memoryType.propertyFlags & vk::MemoryPropertyFlagBits::eHostCoherent)) {
+				memoryHeapSize = memoryProperties.memoryHeaps[memoryType.heapIndex].size;
+				memoryTypeIndex = i;
+				break;
+			}
+		}
+
+		vk::MemoryAllocateInfo inputBufferMemoryAllocInfo(inputBufferMemoryReq.size, memoryTypeIndex);
+		vk::MemoryAllocateInfo outputBufferMemoryAllocInfo(outputBufferMemoryReq.size, memoryTypeIndex);
+
+		vk::DeviceMemory inputBufferMemory = logicalDevice.allocateMemory(inputBufferMemoryAllocInfo);
+		vk::DeviceMemory outputBufferMemory = logicalDevice.allocateMemory(outputBufferMemoryAllocInfo);
+
+		unsigned char* data = static_cast<unsigned char*>(logicalDevice.mapMemory(inputBufferMemory, 0, bufferSize));
+		data = imageData;
+		logicalDevice.unmapMemory(inputBufferMemory);
+		stbi_image_free(imageData);
+
+		logicalDevice.bindBufferMemory(inputBuffer, inputBufferMemory, 0);
+		logicalDevice.bindBufferMemory(outputBuffer, outputBufferMemory, 0);
 	}
 
 	// -------- Helper Functions ----------

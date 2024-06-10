@@ -31,18 +31,23 @@ namespace swf {
 
 		SWFKernel kernel;
 
+		unsigned char* imageData;
 		int imageHeight;
 		int imageWidth;
 		int imageChannels;
-		unsigned char* imageData;
 
 		vk::Buffer inputBuffer;
 		vk::Buffer outputBuffer;
+		vk::DeviceSize bufferSize;
 
 		// Private methods
 		void createVulkanInstance();
 		void pickPhysicalDevice();
 		void createLogicalDevice();
+		
+		void createBuffers();
+		bool readImage(const char* imagePath);
+		void mapDataToMemory(unsigned char* imageData);
 
 		// Helpers
 		int pickPhysicalDeviceHelper(const std::vector<vk::PhysicalDevice>& physicalDeviceVec) const;

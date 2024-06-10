@@ -24,25 +24,9 @@ namespace swf {
 	
 	void SWFApplication::execute(const char* imagePath, const SWFKernelConfiguration* kernelConf) {
 
-		imageData = stbi_load(imagePath, &imageWidth, &imageHeight, &imageChannels, 0);
-
-		std::cout << "Image height: " << imageHeight << std::endl;
-		std::cout << "Image width: " << imageWidth << std::endl;
-		std::cout << "Color channels: " << imageChannels << std::endl << std::endl;
-
-		const uint32_t bufferSize = imageHeight * imageWidth * imageChannels * sizeof(uint8_t);
-
-		vk::BufferCreateInfo bufferCreateInfo{
-			vk::BufferCreateFlags(),
-			bufferSize,
-			vk::BufferUsageFlagBits::eStorageBuffer,
-			vk::SharingMode::eExclusive,
-			1,
-			&computeQueueFamilyIndex
-		};
-
-		inputBuffer = logicalDevice.createBuffer(bufferCreateInfo);
-		outputBuffer = logicalDevice.createBuffer(bufferCreateInfo);
+		if ( !readImage(imagePath) ) {
+			throw std::runtime_error("ERROR: Could not load image");
+		}
 
 		stbi_image_free(imageData);
 	}
@@ -112,6 +96,43 @@ namespace swf {
 		};
 
 		logicalDevice = physicalDevice.createDevice(deviceCreateInfo);
+	}
+
+	bool SWFApplication::readImage(const char* imagePath) {
+
+		imageData = stbi_load(imagePath, &imageWidth, &imageHeight, &imageChannels, 0);
+
+		if (!imageData) {
+			return false;
+		}
+
+		std::cout << "Image height: " << imageHeight << std::endl;
+		std::cout << "Image width: " << imageWidth << std::endl;
+		std::cout << "Color channels: " << imageChannels << std::endl << std::endl;
+
+		bufferSize = imageHeight * imageWidth * imageChannels * sizeof(uint8_t);
+
+		return true;
+	}
+
+	void SWFApplication::createBuffers() {
+
+		vk::BufferCreateInfo bufferCreateInfo{
+			vk::BufferCreateFlags(),
+			bufferSize,
+			vk::BufferUsageFlagBits::eStorageBuffer,
+			vk::SharingMode::eExclusive,
+			1,
+			&computeQueueFamilyIndex
+		};
+
+
+		inputBuffer = logicalDevice.createBuffer(bufferCreateInfo);
+		outputBuffer = logicalDevice.createBuffer(bufferCreateInfo);
+	}
+
+	void SWFApplication::mapDataToMemory(unsigned char* imageData) {
+
 	}
 
 	// -------- Helper Functions ----------

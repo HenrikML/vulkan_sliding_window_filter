@@ -28,9 +28,23 @@ else()
     message( "    path: ${Vulkan_GLSLC_EXECUTABLE}")
 endif()
 
+
+file(GLOB_RECURSE SHADERS ${PROJECT_SOURCE_DIR}/shaders/*.comp)
+foreach(SHADER ${SHADERS})
+    get_filename_component(FILE_NAME ${SHADER} NAME)
+    message( "Compiling ${SHADER}")
+    add_custom_command(
+        OUTPUT ${PROJECT_BINARY_DIR}/shaders/${FILE_NAME}.spv
+        DEPENDS ${SHADER}
+        COMMAND ${Vulkan_GLSLC_EXECUTABLE} ${SHADER} -o ${PROJECT_BINARY_DIR}/shaders/${FILE_NAME}.spv
+        )
+    #file(COPY ${PROJECT_SOURCE_DIR}/shaders/${FILE_NAME}.spv DESTINATION shaders)
+    list(APPEND SPIRV_BINARY_FILES shaders/${FILE_NAME}.spv)
+endforeach(SHADER)
+
+
 file(GLOB_RECURSE SOURCES ${PROJECT_SOURCE_DIR}/src/*.cpp)
 file(COPY images/input.jpg DESTINATION img)
-file(COPY shaders/filter.comp.spv DESTINATION shaders)
 
 add_executable(${PROJECT_NAME} ${SOURCES})
 
@@ -53,3 +67,6 @@ elseif (UNIX)
     target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/src)
     target_link_libraries(${PROJECT_NAME} PUBLIC Vulkan::Vulkan Vulkan::Headers)
 endif()
+
+add_custom_target(shaders ALL DEPENDS ${SPIRV_BINARY_FILES})
+add_dependencies(${NAME} shaders)

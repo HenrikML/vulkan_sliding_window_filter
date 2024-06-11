@@ -42,6 +42,7 @@ namespace swf {
 		vk::Buffer inputBuffer;
 		vk::Buffer outputBuffer;
 		vk::DeviceSize bufferSize;
+		uint64_t elements;
 
 		vk::DeviceMemory inputBufferMemory;
 		vk::DeviceMemory outputBufferMemory;
@@ -54,6 +55,12 @@ namespace swf {
 		vk::Pipeline pipeline;
 
 		vk::DescriptorPool descriptorPool;
+		vk::DescriptorSet descriptorSet;
+
+		vk::CommandPool commandPool;
+		vk::CommandBuffer commandBuffer;
+
+		vk::Fence fence;
 
 		// Private methods
 		void createVulkanInstance();
@@ -67,6 +74,8 @@ namespace swf {
 		void createDescriptorSetLayout();
 		void createPipeline();
 		void createDescriptorSet();
+		void createCommandBuffer();
+		void submitCommands();
 
 		// Helpers
 		int pickPhysicalDeviceHelper(const std::vector<vk::PhysicalDevice>& physicalDeviceVec) const;

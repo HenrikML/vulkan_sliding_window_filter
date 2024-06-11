@@ -7,6 +7,9 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include <stb_image_write.h>
+
 namespace swf {
 	SWFApplication::SWFApplication(std::string applicationName) 
 		: applicationName(applicationName) {
@@ -16,6 +19,9 @@ namespace swf {
 	}
 
 	SWFApplication::~SWFApplication() {
+		logicalDevice.resetCommandPool(commandPool, vk::CommandPoolResetFlags());
+		logicalDevice.destroyFence(fence);
+		logicalDevice.destroyCommandPool(commandPool);
 		logicalDevice.destroyDescriptorPool(descriptorPool);
 		logicalDevice.destroyPipeline(pipeline);
 		logicalDevice.destroyPipelineCache(pipelineCache);
@@ -28,6 +34,7 @@ namespace swf {
 		logicalDevice.destroyBuffer(inputBuffer);
 		logicalDevice.destroy();
 		vulkanInstance.destroy();
+		stbi_image_free(imageData);
 	}
 	
 	
@@ -43,6 +50,8 @@ namespace swf {
 		createDescriptorSetLayout();
 		createPipeline();
 		createDescriptorSet();
+		createCommandBuffer();
+		submitCommands();
 	}
 
 
@@ -124,7 +133,8 @@ namespace swf {
 		std::cout << "Image width: " << imageWidth << std::endl;
 		std::cout << "Color channels: " << imageChannels << std::endl << std::endl;
 
-		bufferSize = imageHeight * imageWidth * imageChannels * sizeof(uint8_t);
+		elements = imageHeight * imageWidth * imageChannels;
+		bufferSize = elements * sizeof(uint32_t);
 
 		return true;
 	}
@@ -169,10 +179,12 @@ namespace swf {
 		inputBufferMemory = logicalDevice.allocateMemory(inputBufferMemoryAllocInfo);
 		outputBufferMemory = logicalDevice.allocateMemory(outputBufferMemoryAllocInfo);
 
-		unsigned char* data = static_cast<unsigned char*>(logicalDevice.mapMemory(inputBufferMemory, 0, bufferSize));
-		data = imageData;
+		uint32_t* data = static_cast<uint32_t*>(logicalDevice.mapMemory(inputBufferMemory, 0, bufferSize));
+
+		for (uint64_t i = 0; i < elements; ++i) {
+			data[i] = uint32_t(imageData[i]);
+		}
 		logicalDevice.unmapMemory(inputBufferMemory);
-		stbi_image_free(imageData);
 
 		logicalDevice.bindBufferMemory(inputBuffer, inputBufferMemory, 0);
 		logicalDevice.bindBufferMemory(outputBuffer, outputBufferMemory, 0);
@@ -271,16 +283,16 @@ namespace swf {
 		};
 
 		const std::vector<vk::DescriptorSet> descriptorSets = logicalDevice.allocateDescriptorSets(descriptorSetAllocateInfo);
-		vk::DescriptorSet descriptorSet = descriptorSets.front();
+		descriptorSet = descriptorSets.front();
 		vk::DescriptorBufferInfo inputBufferInfo{
 			inputBuffer,
 			0,
-			bufferSize * sizeof(uint8_t)
+			bufferSize
 		};
 		vk::DescriptorBufferInfo outputBufferInfo{
 			outputBuffer,
 			0,
-			bufferSize * sizeof(uint8_t)
+			bufferSize
 		};
 
 		std::vector<vk::WriteDescriptorSet> writeDescriptorSets;
@@ -297,7 +309,7 @@ namespace swf {
 
 		vk::WriteDescriptorSet outputWriteDescriptorSet{
 			descriptorSet,
-			0,
+			1,
 			0,
 			1,
 			vk::DescriptorType::eStorageBuffer,
@@ -309,6 +321,61 @@ namespace swf {
 		writeDescriptorSets.push_back(outputWriteDescriptorSet);
 
 		logicalDevice.updateDescriptorSets(writeDescriptorSets, {});
+	}
+
+
+	void SWFApplication::createCommandBuffer() {
+		vk::CommandPoolCreateInfo commandPoolCreateInfo{
+			vk::CommandPoolCreateFlags(),
+			computeQueueFamilyIndex
+		};
+
+		commandPool = logicalDevice.createCommandPool(commandPoolCreateInfo);
+
+		vk::CommandBufferAllocateInfo commandBufferAllocateInfo{
+			commandPool,						// Command Pool
+			vk::CommandBufferLevel::ePrimary,	// Command Buffer Level
+			1									// Command Buffer Count
+		};
+		const std::vector<vk::CommandBuffer> commandBuffers = logicalDevice.allocateCommandBuffers(commandBufferAllocateInfo);
+		commandBuffer = commandBuffers.front();
+	}
+
+	void SWFApplication::submitCommands() {
+		vk::CommandBufferBeginInfo commandBufferBeginInfo{ vk::CommandBufferUsageFlagBits::eOneTimeSubmit };
+		commandBuffer.begin(commandBufferBeginInfo);
+		commandBuffer.bindPipeline(vk::PipelineBindPoint::eCompute, pipeline);
+		commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eCompute, pipelineLayout, 0, { descriptorSet }, {});
+		commandBuffer.dispatch(elements / WORKGROUPS, 1, 1);
+		commandBuffer.end();
+
+		vk::Queue queue = logicalDevice.getQueue(computeQueueFamilyIndex, 0);
+		fence = logicalDevice.createFence(vk::FenceCreateInfo());
+
+		vk::SubmitInfo submitInfo{
+			0,
+			nullptr,
+			nullptr,
+			1,
+			&commandBuffer
+		};
+
+		queue.submit({ submitInfo }, fence);
+		logicalDevice.waitForFences({ fence }, true, UINT64_MAX);
+
+
+		uint8_t* imageOutput = new uint8_t[elements];
+		uint32_t* data = static_cast<uint32_t*>(logicalDevice.mapMemory(outputBufferMemory, 0, bufferSize));
+
+		for (uint64_t i = 0; i < elements; ++i) {
+			imageOutput[i] = uint8_t(data[i]);
+		}
+
+		logicalDevice.unmapMemory(outputBufferMemory);
+
+		stbi_write_jpg("img\\output.jpg", imageWidth, imageHeight, imageChannels, imageOutput, 100);
+
+		delete[] imageOutput;
 	}
 
 	// -------- Helper Functions ----------

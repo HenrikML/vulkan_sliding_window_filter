@@ -47,6 +47,7 @@ namespace swf {
 		vk::DeviceMemory outputBufferMemory;
 
 		vk::ShaderModule compShaderModule;
+		vk::DescriptorSetLayout descriptorSetLayout;
 
 		// Private methods
 		void createVulkanInstance();

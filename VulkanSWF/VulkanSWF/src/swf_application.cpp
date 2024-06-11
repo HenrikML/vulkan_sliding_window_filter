@@ -16,6 +16,7 @@ namespace swf {
 	}
 
 	SWFApplication::~SWFApplication() {
+		logicalDevice.destroyDescriptorSetLayout(descriptorSetLayout);
 		logicalDevice.destroyShaderModule(compShaderModule);
 		logicalDevice.freeMemory(outputBufferMemory);
 		logicalDevice.freeMemory(inputBufferMemory);
@@ -174,17 +175,36 @@ namespace swf {
 	void SWFApplication::createShaderModule() {
 		std::vector<char> compShader = readShader("shaders/filter.comp.spv");
 
-		vk::ShaderModuleCreateInfo shaderModuleCreateInfo(
+		vk::ShaderModuleCreateInfo shaderModuleCreateInfo{
 			vk::ShaderModuleCreateFlags(),							// Flags
 			compShader.size(),										// Shader size
-			reinterpret_cast<const uint32_t*>(compShader.data()));	// Shader code
+			reinterpret_cast<const uint32_t*>(compShader.data()) 	// Shader code
+		};
 
 		compShaderModule = logicalDevice.createShaderModule(shaderModuleCreateInfo);
 	}
 
 
 	void SWFApplication::createDescriptorSetLayout() {
+		std::vector<vk::DescriptorSetLayoutBinding> descriptorSetLayoutBindings;
 
+		for (uint32_t i = 0; i < 2; i++) {
+			vk::DescriptorSetLayoutBinding binding{
+				i,
+				vk::DescriptorType::eStorageBuffer,
+				1,
+				vk::ShaderStageFlagBits::eCompute
+			};
+
+			descriptorSetLayoutBindings.push_back(binding);
+		}
+
+		vk::DescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo{
+			vk::DescriptorSetLayoutCreateFlags(),
+			descriptorSetLayoutBindings
+		};
+
+		descriptorSetLayout = logicalDevice.createDescriptorSetLayout(descriptorSetLayoutCreateInfo);
 	}
 
 	// -------- Helper Functions ----------

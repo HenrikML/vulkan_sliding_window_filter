@@ -16,6 +16,7 @@ namespace swf {
 	}
 
 	SWFApplication::~SWFApplication() {
+		logicalDevice.destroyDescriptorPool(descriptorPool);
 		logicalDevice.destroyPipeline(pipeline);
 		logicalDevice.destroyPipelineCache(pipelineCache);
 		logicalDevice.destroyPipelineLayout(pipelineLayout);
@@ -40,6 +41,8 @@ namespace swf {
 		mapDataToMemory();
 		createShaderModule();
 		createDescriptorSetLayout();
+		createPipeline();
+		createDescriptorSet();
 	}
 
 
@@ -246,6 +249,66 @@ namespace swf {
 			throw std::runtime_error("ERROR: Failed to create pipeline");
 
 		}
+	}
+
+
+	void SWFApplication::createDescriptorSet() {
+		vk::DescriptorPoolSize descriptorPoolSize{
+			vk::DescriptorType::eStorageBuffer,		// Descriptor Type
+			2										// Descriptor Count
+		};
+		vk::DescriptorPoolCreateInfo descriptorPoolCreateInfo{
+			vk::DescriptorPoolCreateFlags(),		// Flags
+			1,										// Pool Size Count
+			descriptorPoolSize						// Pool Sizes
+		};
+		descriptorPool = logicalDevice.createDescriptorPool(descriptorPoolCreateInfo);
+
+		vk::DescriptorSetAllocateInfo descriptorSetAllocateInfo{
+			descriptorPool,							// Descriptor Pool
+			1,										// Descriptor Set Count
+			&descriptorSetLayout					// Layouts
+		};
+
+		const std::vector<vk::DescriptorSet> descriptorSets = logicalDevice.allocateDescriptorSets(descriptorSetAllocateInfo);
+		vk::DescriptorSet descriptorSet = descriptorSets.front();
+		vk::DescriptorBufferInfo inputBufferInfo{
+			inputBuffer,
+			0,
+			bufferSize * sizeof(uint8_t)
+		};
+		vk::DescriptorBufferInfo outputBufferInfo{
+			outputBuffer,
+			0,
+			bufferSize * sizeof(uint8_t)
+		};
+
+		std::vector<vk::WriteDescriptorSet> writeDescriptorSets;
+
+		vk::WriteDescriptorSet inputWriteDescriptorSet{
+			descriptorSet,
+			0,
+			0,
+			1,
+			vk::DescriptorType::eStorageBuffer,
+			nullptr,
+			&inputBufferInfo
+		};
+
+		vk::WriteDescriptorSet outputWriteDescriptorSet{
+			descriptorSet,
+			0,
+			0,
+			1,
+			vk::DescriptorType::eStorageBuffer,
+			nullptr,
+			&outputBufferInfo
+		};
+
+		writeDescriptorSets.push_back(inputWriteDescriptorSet);
+		writeDescriptorSets.push_back(outputWriteDescriptorSet);
+
+		logicalDevice.updateDescriptorSets(writeDescriptorSets, {});
 	}
 
 	// -------- Helper Functions ----------

@@ -53,6 +53,8 @@ namespace swf {
 		vk::PipelineCache pipelineCache;
 		vk::Pipeline pipeline;
 
+		vk::DescriptorPool descriptorPool;
+
 		// Private methods
 		void createVulkanInstance();
 		void pickPhysicalDevice();
@@ -64,6 +66,7 @@ namespace swf {
 		void createShaderModule();
 		void createDescriptorSetLayout();
 		void createPipeline();
+		void createDescriptorSet();
 
 		// Helpers
 		int pickPhysicalDeviceHelper(const std::vector<vk::PhysicalDevice>& physicalDeviceVec) const;

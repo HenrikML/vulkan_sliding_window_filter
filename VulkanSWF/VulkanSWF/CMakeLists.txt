@@ -30,6 +30,7 @@ endif()
 
 file(GLOB_RECURSE SOURCES ${PROJECT_SOURCE_DIR}/src/*.cpp)
 file(COPY images/input.jpg DESTINATION img)
+file(COPY shaders/filter.comp.spv DESTINATION shaders)
 
 add_executable(${PROJECT_NAME} ${SOURCES})
 
@@ -41,6 +42,7 @@ if (WIN32)
     target_include_directories(${PROJECT_NAME} PUBLIC
     ${PROJECT_SOURCE_DIR}/src
     ${PROJECT_SOURCE_DIR}/external
+    ${PROJECT_SOURCE_DIR}/shaders
     ${Vulkan_INCLUDE_DIRS}
     )
 

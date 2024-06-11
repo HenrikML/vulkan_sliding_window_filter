@@ -2,6 +2,7 @@
 
 #include <vulkan/vulkan.hpp>
 #include <string>
+#include <vector>
 
 #include "swf_kernel.h"
 
@@ -24,6 +25,8 @@ namespace swf {
 		// Private variables
 		const std::string applicationName;
 
+		const uint32_t WORKGROUPS = 32;
+
 		vk::Instance vulkanInstance;
 		vk::PhysicalDevice physicalDevice;
 		vk::Device logicalDevice;
@@ -40,6 +43,11 @@ namespace swf {
 		vk::Buffer outputBuffer;
 		vk::DeviceSize bufferSize;
 
+		vk::DeviceMemory inputBufferMemory;
+		vk::DeviceMemory outputBufferMemory;
+
+		vk::ShaderModule compShaderModule;
+
 		// Private methods
 		void createVulkanInstance();
 		void pickPhysicalDevice();
@@ -48,11 +56,14 @@ namespace swf {
 		void createBuffers();
 		bool readImage(const char* imagePath);
 		void mapDataToMemory();
+		void createShaderModule();
+		void createDescriptorSetLayout();
 
 		// Helpers
 		int pickPhysicalDeviceHelper(const std::vector<vk::PhysicalDevice>& physicalDeviceVec) const;
 		void printPhysicalDeviceInfo(const vk::PhysicalDeviceProperties& deviceProps) const;
 		void readImage(char* filename);
+		std::vector<char> readShader(const std::string& filepath);
 
 	};
 

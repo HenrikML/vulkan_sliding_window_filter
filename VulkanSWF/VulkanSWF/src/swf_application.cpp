@@ -2,6 +2,7 @@
 #include <iostream>
 #include <exception>
 #include <filesystem>
+#include <fstream>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
@@ -15,6 +16,9 @@ namespace swf {
 	}
 
 	SWFApplication::~SWFApplication() {
+		logicalDevice.destroyShaderModule(compShaderModule);
+		logicalDevice.freeMemory(outputBufferMemory);
+		logicalDevice.freeMemory(inputBufferMemory);
 		logicalDevice.destroyBuffer(outputBuffer);
 		logicalDevice.destroyBuffer(inputBuffer);
 		logicalDevice.destroy();
@@ -30,7 +34,8 @@ namespace swf {
 
 		createBuffers();
 		mapDataToMemory();
-
+		createShaderModule();
+		createDescriptorSetLayout();
 	}
 
 
@@ -154,8 +159,8 @@ namespace swf {
 		vk::MemoryAllocateInfo inputBufferMemoryAllocInfo(inputBufferMemoryReq.size, memoryTypeIndex);
 		vk::MemoryAllocateInfo outputBufferMemoryAllocInfo(outputBufferMemoryReq.size, memoryTypeIndex);
 
-		vk::DeviceMemory inputBufferMemory = logicalDevice.allocateMemory(inputBufferMemoryAllocInfo);
-		vk::DeviceMemory outputBufferMemory = logicalDevice.allocateMemory(outputBufferMemoryAllocInfo);
+		inputBufferMemory = logicalDevice.allocateMemory(inputBufferMemoryAllocInfo);
+		outputBufferMemory = logicalDevice.allocateMemory(outputBufferMemoryAllocInfo);
 
 		unsigned char* data = static_cast<unsigned char*>(logicalDevice.mapMemory(inputBufferMemory, 0, bufferSize));
 		data = imageData;
@@ -166,7 +171,39 @@ namespace swf {
 		logicalDevice.bindBufferMemory(outputBuffer, outputBufferMemory, 0);
 	}
 
+	void SWFApplication::createShaderModule() {
+		std::vector<char> compShader = readShader("shaders/filter.comp.spv");
+
+		vk::ShaderModuleCreateInfo shaderModuleCreateInfo(
+			vk::ShaderModuleCreateFlags(),							// Flags
+			compShader.size(),										// Shader size
+			reinterpret_cast<const uint32_t*>(compShader.data()));	// Shader code
+
+		compShaderModule = logicalDevice.createShaderModule(shaderModuleCreateInfo);
+	}
+
+
+	void SWFApplication::createDescriptorSetLayout() {
+
+	}
+
 	// -------- Helper Functions ----------
+
+	std::vector<char> SWFApplication::readShader(const std::string& filepath) {
+		std::ifstream file{ filepath, std::ios::ate | std::ios::binary };
+
+		if (!file.is_open()) {
+			throw std::runtime_error("failed to open file: " + filepath);
+		}
+
+		size_t fileSize = static_cast<size_t>(file.tellg());
+		std::vector<char> buffer(fileSize);
+		file.seekg(0);
+		file.read(buffer.data(), fileSize);
+		file.close();
+
+		return buffer;
+	}
 
 	int SWFApplication::pickPhysicalDeviceHelper(const std::vector<vk::PhysicalDevice>& physicalDeviceVec) const {
 		int deviceIndex = 0;

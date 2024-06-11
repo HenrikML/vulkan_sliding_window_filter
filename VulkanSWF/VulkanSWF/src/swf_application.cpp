@@ -16,6 +16,9 @@ namespace swf {
 	}
 
 	SWFApplication::~SWFApplication() {
+		logicalDevice.destroyPipeline(pipeline);
+		logicalDevice.destroyPipelineCache(pipelineCache);
+		logicalDevice.destroyPipelineLayout(pipelineLayout);
 		logicalDevice.destroyDescriptorSetLayout(descriptorSetLayout);
 		logicalDevice.destroyShaderModule(compShaderModule);
 		logicalDevice.freeMemory(outputBufferMemory);
@@ -205,6 +208,44 @@ namespace swf {
 		};
 
 		descriptorSetLayout = logicalDevice.createDescriptorSetLayout(descriptorSetLayoutCreateInfo);
+	}
+
+	void SWFApplication::createPipeline() {
+		vk::PipelineLayoutCreateInfo pipelineLayoutCreateInfo{
+			vk::PipelineLayoutCreateFlags(),
+			descriptorSetLayout
+		};
+
+		vk::PipelineCacheCreateInfo pipelineCacheCreateInfo{};
+
+		pipelineLayout = logicalDevice.createPipelineLayout(pipelineLayoutCreateInfo);
+		pipelineCache = logicalDevice.createPipelineCache(pipelineCacheCreateInfo);
+
+		vk::PipelineShaderStageCreateInfo pipelineShaderStageCreateInfo{
+			vk::PipelineShaderStageCreateFlags(),	// Flags
+			vk::ShaderStageFlagBits::eCompute,		// Shader Stage
+			compShaderModule,						// Shader Module
+			"main"									// Main Function
+		};
+
+		vk::ComputePipelineCreateInfo computePipelineCreateInfo{
+			vk::PipelineCreateFlags(),				// Flags
+			pipelineShaderStageCreateInfo,			// Shader Stage Create Info
+			pipelineLayout							// Pipeline Layout
+		};
+
+		vk::Result result;
+		std::tie( result, pipeline ) = logicalDevice.createComputePipeline(pipelineCache, computePipelineCreateInfo);
+
+		switch (result)
+		{
+		case vk::Result::eSuccess:
+			break;
+
+		default:
+			throw std::runtime_error("ERROR: Failed to create pipeline");
+
+		}
 	}
 
 	// -------- Helper Functions ----------

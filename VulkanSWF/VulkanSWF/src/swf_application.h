@@ -12,6 +12,23 @@
 
 namespace swf {
 
+
+	struct SWFImageInfo {
+		uint32_t width;
+		uint32_t height;
+		uint32_t channels;
+	};
+
+	struct SWFBufferInfo {
+		uint32_t binding;
+		vk::DescriptorType type;
+	};
+
+	struct SWFKernelInfo {
+		uint32_t width;
+		float* data;
+	};
+
 	class SWFApplication {
 	public:
 		// Public variables
@@ -35,17 +52,29 @@ namespace swf {
 		SWFKernel kernel;
 
 		unsigned char* imageData;
-		int imageHeight;
-		int imageWidth;
-		int imageChannels;
+		
+		SWFImageInfo imageInfo;
+		SWFKernelInfo kernelInfo;
+
+		std::vector<SWFBufferInfo> bufferInfos;
 
 		vk::Buffer inputBuffer;
 		vk::Buffer outputBuffer;
-		vk::DeviceSize bufferSize;
+		vk::DeviceSize ioBufferSize;
+
+		vk::Buffer kernelInfoBuffer;
+		vk::DeviceSize kernelInfoWidthBufferSize;
+		vk::DeviceSize kernelInfoDataBufferSize;
+
+		vk::Buffer imageInfoBuffer;
+		vk::DeviceSize imageInfoBufferSize;
+
 		uint64_t elements;
 
 		vk::DeviceMemory inputBufferMemory;
 		vk::DeviceMemory outputBufferMemory;
+		vk::DeviceMemory kernelInfoBufferMemory;
+		vk::DeviceMemory imageInfoBufferMemory;
 
 		vk::ShaderModule compShaderModule;
 		vk::DescriptorSetLayout descriptorSetLayout;

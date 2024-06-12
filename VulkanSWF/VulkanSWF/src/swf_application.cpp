@@ -28,13 +28,19 @@ namespace swf {
 		logicalDevice.destroyPipelineLayout(pipelineLayout);
 		logicalDevice.destroyDescriptorSetLayout(descriptorSetLayout);
 		logicalDevice.destroyShaderModule(compShaderModule);
+
+		logicalDevice.freeMemory(kernelInfoBufferMemory);
+		logicalDevice.freeMemory(imageInfoBufferMemory);
 		logicalDevice.freeMemory(outputBufferMemory);
 		logicalDevice.freeMemory(inputBufferMemory);
+
+		logicalDevice.destroyBuffer(imageInfoBuffer);
+		logicalDevice.destroyBuffer(kernelInfoBuffer);
 		logicalDevice.destroyBuffer(outputBuffer);
 		logicalDevice.destroyBuffer(inputBuffer);
+
 		logicalDevice.destroy();
 		vulkanInstance.destroy();
-		stbi_image_free(imageData);
 	}
 	
 	
@@ -43,6 +49,13 @@ namespace swf {
 		if ( !readImage(imagePath) ) {
 			throw std::runtime_error("ERROR: Could not load image");
 		}
+
+		kernel.setKernel(kernelConf);
+		kernelInfo = {};
+		kernelInfo.data = kernel.getKernel();
+		kernelInfo.width = kernel.getKernelWidth();
+		kernelInfoWidthBufferSize = sizeof(uint32_t);
+		kernelInfoDataBufferSize = 4 * 31 * 31 * sizeof(float);
 
 		createBuffers();
 		mapDataToMemory();
@@ -69,12 +82,12 @@ namespace swf {
 		#ifdef DEBUG
 			instanceLayers.push_back("VK_LAYER_KHRONOS_validation");
 		#endif
-
+			
 		vk::InstanceCreateInfo instanceCreateInfo{
-			vk::InstanceCreateFlags(),	// Flags
-			&applicationInfo,			// Application Info
-			instanceLayers,				// Enabled Layers
-			{}							// Enabled Extensions
+			vk::InstanceCreateFlags(),		// Flags
+			&applicationInfo,				// Application Info
+			instanceLayers,					// Enabled Layers
+			{}								// Enabled Extensions
 		};
 
 		vulkanInstance = vk::createInstance(instanceCreateInfo);
@@ -123,27 +136,35 @@ namespace swf {
 
 	bool SWFApplication::readImage(const char* imagePath) {
 
-		imageData = stbi_load(imagePath, &imageWidth, &imageHeight, &imageChannels, 0);
+		int w, h, c;
+
+		imageData = stbi_load(imagePath, &w, &h, &c, 0);
+
+		imageInfo.width = w;
+		imageInfo.height = h;
+		imageInfo.channels = c;
 
 		if (!imageData) {
 			return false;
 		}
 
-		std::cout << "Image height: " << imageHeight << std::endl;
-		std::cout << "Image width: " << imageWidth << std::endl;
-		std::cout << "Color channels: " << imageChannels << std::endl << std::endl;
+		std::cout << "Image height: " << imageInfo.height << std::endl;
+		std::cout << "Image width: " << imageInfo.width << std::endl;
+		std::cout << "Color channels: " << imageInfo.channels << std::endl << std::endl;
 
-		elements = imageHeight * imageWidth * imageChannels;
-		bufferSize = elements * sizeof(uint32_t);
+		elements = uint64_t(imageInfo.width) * uint64_t(imageInfo.height) * uint64_t(imageInfo.channels);
+		ioBufferSize = elements * sizeof(uint32_t);
+		imageInfoBufferSize = sizeof(SWFImageInfo);
 
 		return true;
 	}
 
 	void SWFApplication::createBuffers() {
 
-		vk::BufferCreateInfo bufferCreateInfo{
+		// Input and Output buffers
+		vk::BufferCreateInfo ioBufferCreateInfo{
 			vk::BufferCreateFlags(),
-			bufferSize,
+			ioBufferSize,
 			vk::BufferUsageFlagBits::eStorageBuffer,
 			vk::SharingMode::eExclusive,
 			1,
@@ -151,13 +172,55 @@ namespace swf {
 		};
 
 
-		inputBuffer = logicalDevice.createBuffer(bufferCreateInfo);
-		outputBuffer = logicalDevice.createBuffer(bufferCreateInfo);
+		inputBuffer = logicalDevice.createBuffer(ioBufferCreateInfo);
+		outputBuffer = logicalDevice.createBuffer(ioBufferCreateInfo);
+
+		int n = bufferInfos.size();
+
+		for (int i = n; i < n + 2; ++i) {
+			SWFBufferInfo bufferInfo = {};
+			bufferInfo.binding = i;
+			bufferInfo.type = vk::DescriptorType::eStorageBuffer;
+			bufferInfos.push_back(bufferInfo);
+		}
+
+		// Uniform Buffers
+
+		vk::BufferCreateInfo kernelInfoBufferCreateInfo{
+			vk::BufferCreateFlags(),
+			kernelInfoDataBufferSize + kernelInfoWidthBufferSize,
+			vk::BufferUsageFlagBits::eUniformBuffer,
+			vk::SharingMode::eExclusive,
+			1,
+			&computeQueueFamilyIndex
+		};
+
+		kernelInfoBuffer = logicalDevice.createBuffer(kernelInfoBufferCreateInfo);
+
+		vk::BufferCreateInfo imageInfoBufferCreateInfo{
+			vk::BufferCreateFlags(),
+			imageInfoBufferSize,
+			vk::BufferUsageFlagBits::eUniformBuffer,
+			vk::SharingMode::eExclusive,
+			1,
+			&computeQueueFamilyIndex
+		};
+		imageInfoBuffer = logicalDevice.createBuffer(imageInfoBufferCreateInfo);
+
+		n = bufferInfos.size();
+		for (int i = n; i < n + 2; ++i) {
+			SWFBufferInfo bufferInfo = {};
+			bufferInfo.binding = i;
+			bufferInfo.type = vk::DescriptorType::eUniformBuffer;
+			bufferInfos.push_back(bufferInfo);
+		}
 	}
 
 	void SWFApplication::mapDataToMemory() {
 		vk::MemoryRequirements inputBufferMemoryReq = logicalDevice.getBufferMemoryRequirements(inputBuffer);
 		vk::MemoryRequirements outputBufferMemoryReq = logicalDevice.getBufferMemoryRequirements(outputBuffer);
+		vk::MemoryRequirements kernelInfoBufferMemoryReq = logicalDevice.getBufferMemoryRequirements(kernelInfoBuffer);
+		vk::MemoryRequirements imageInfoBufferMemoryReq = logicalDevice.getBufferMemoryRequirements(imageInfoBuffer);
 
 		vk::PhysicalDeviceMemoryProperties memoryProperties = physicalDevice.getMemoryProperties();
 		uint32_t memoryTypeIndex = UINT32_MAX;
@@ -173,21 +236,52 @@ namespace swf {
 			}
 		}
 
+		// Map input and output buffers
 		vk::MemoryAllocateInfo inputBufferMemoryAllocInfo(inputBufferMemoryReq.size, memoryTypeIndex);
 		vk::MemoryAllocateInfo outputBufferMemoryAllocInfo(outputBufferMemoryReq.size, memoryTypeIndex);
 
 		inputBufferMemory = logicalDevice.allocateMemory(inputBufferMemoryAllocInfo);
 		outputBufferMemory = logicalDevice.allocateMemory(outputBufferMemoryAllocInfo);
 
-		uint32_t* data = static_cast<uint32_t*>(logicalDevice.mapMemory(inputBufferMemory, 0, bufferSize));
+		uint32_t* inputData = static_cast<uint32_t*>(logicalDevice.mapMemory(inputBufferMemory, 0, ioBufferSize));
 
 		for (uint64_t i = 0; i < elements; ++i) {
-			data[i] = uint32_t(imageData[i]);
+			inputData[i] = uint32_t(imageData[i]);
 		}
 		logicalDevice.unmapMemory(inputBufferMemory);
+		stbi_image_free(imageData);
 
 		logicalDevice.bindBufferMemory(inputBuffer, inputBufferMemory, 0);
 		logicalDevice.bindBufferMemory(outputBuffer, outputBufferMemory, 0);
+
+		// Map kernel info buffer
+		vk::MemoryAllocateInfo kernelInfoBufferMemoryAllocInfo(kernelInfoBufferMemoryReq.size, memoryTypeIndex);
+		kernelInfoBufferMemory = logicalDevice.allocateMemory(kernelInfoBufferMemoryAllocInfo);
+
+		uint32_t* kernelInfoDataWidth = static_cast<uint32_t*>(logicalDevice.mapMemory(kernelInfoBufferMemory, 0, kernelInfoWidthBufferSize));
+		kernelInfoDataWidth[0] = kernelInfo.width;
+
+		logicalDevice.unmapMemory(kernelInfoBufferMemory);
+
+		float* kernelInfoData = static_cast<float*>(logicalDevice.mapMemory(kernelInfoBufferMemory, kernelInfoWidthBufferSize, kernelInfoDataBufferSize));
+
+		uint32_t n = kernelInfo.width * kernelInfo.width;
+		for (uint32_t i = 0; i < n; ++i) {
+			kernelInfoData[i*4+3] = kernelInfo.data[i];
+		}
+
+		logicalDevice.unmapMemory(kernelInfoBufferMemory);
+		logicalDevice.bindBufferMemory(kernelInfoBuffer, kernelInfoBufferMemory, 0);
+
+		// Map image info buffer
+		vk::MemoryAllocateInfo imageInfoBufferMemoryAllocInfo(imageInfoBufferMemoryReq.size, memoryTypeIndex);
+		imageInfoBufferMemory = logicalDevice.allocateMemory(imageInfoBufferMemoryAllocInfo);
+
+		SWFImageInfo* imageInfoData = static_cast<SWFImageInfo*>(logicalDevice.mapMemory(imageInfoBufferMemory, 0, imageInfoBufferSize));
+		imageInfoData[0] = imageInfo;
+		logicalDevice.unmapMemory(imageInfoBufferMemory);
+
+		logicalDevice.bindBufferMemory(imageInfoBuffer, imageInfoBufferMemory, 0);
 	}
 
 	void SWFApplication::createShaderModule() {
@@ -206,13 +300,19 @@ namespace swf {
 	void SWFApplication::createDescriptorSetLayout() {
 		std::vector<vk::DescriptorSetLayoutBinding> descriptorSetLayoutBindings;
 
-		for (uint32_t i = 0; i < 2; i++) {
+		for (SWFBufferInfo bufferInfo : bufferInfos) {
+			vk::DescriptorSetLayoutBinding binding = {};
+			binding.binding = bufferInfo.binding;
+			binding.descriptorType = bufferInfo.type;
+			binding.descriptorCount = 1;
+			binding.stageFlags = vk::ShaderStageFlagBits::eCompute;
+			/*
 			vk::DescriptorSetLayoutBinding binding{
-				i,
-				vk::DescriptorType::eStorageBuffer,
+				bufferInfo.binding,
+				bufferInfo.type,
 				1,
 				vk::ShaderStageFlagBits::eCompute
-			};
+			};*/
 
 			descriptorSetLayoutBindings.push_back(binding);
 		}
@@ -265,15 +365,28 @@ namespace swf {
 
 
 	void SWFApplication::createDescriptorSet() {
-		vk::DescriptorPoolSize descriptorPoolSize{
+
+		std::vector<vk::DescriptorPoolSize> descriptorPoolSizes = {
+			vk::DescriptorPoolSize{
+				vk::DescriptorType::eStorageBuffer,
+				2
+			},
+			vk::DescriptorPoolSize{
+				vk::DescriptorType::eUniformBuffer,
+				2
+			}
+		};
+
+		/*vk::DescriptorPoolSize descriptorPoolSize{
 			vk::DescriptorType::eStorageBuffer,		// Descriptor Type
 			2										// Descriptor Count
-		};
-		vk::DescriptorPoolCreateInfo descriptorPoolCreateInfo{
-			vk::DescriptorPoolCreateFlags(),		// Flags
-			1,										// Pool Size Count
-			descriptorPoolSize						// Pool Sizes
-		};
+		};*/
+		vk::DescriptorPoolCreateInfo descriptorPoolCreateInfo = {};
+		descriptorPoolCreateInfo.flags = vk::DescriptorPoolCreateFlags();
+		descriptorPoolCreateInfo.poolSizeCount = descriptorPoolSizes.size();
+		descriptorPoolCreateInfo.maxSets = 1;
+		descriptorPoolCreateInfo.pPoolSizes = descriptorPoolSizes.data();
+
 		descriptorPool = logicalDevice.createDescriptorPool(descriptorPoolCreateInfo);
 
 		vk::DescriptorSetAllocateInfo descriptorSetAllocateInfo{
@@ -287,12 +400,22 @@ namespace swf {
 		vk::DescriptorBufferInfo inputBufferInfo{
 			inputBuffer,
 			0,
-			bufferSize
+			ioBufferSize
 		};
 		vk::DescriptorBufferInfo outputBufferInfo{
 			outputBuffer,
 			0,
-			bufferSize
+			ioBufferSize
+		};
+		vk::DescriptorBufferInfo kernelInfoBufferInfo{
+			kernelInfoBuffer,
+			0,
+			kernelInfoDataBufferSize + kernelInfoWidthBufferSize
+		};
+		vk::DescriptorBufferInfo imageInfoBufferInfo{
+			imageInfoBuffer,
+			0,
+			imageInfoBufferSize
 		};
 
 		std::vector<vk::WriteDescriptorSet> writeDescriptorSets;
@@ -316,9 +439,38 @@ namespace swf {
 			nullptr,
 			&outputBufferInfo
 		};
+		vk::WriteDescriptorSet kernelInfoWriteDescriptorSet{
+			descriptorSet,
+			2,
+			0,
+			1,
+			vk::DescriptorType::eUniformBuffer,
+			nullptr,
+			&kernelInfoBufferInfo
+		};
+
+		vk::WriteDescriptorSet imageInfoWriteDescriptorSet = {};
+		imageInfoWriteDescriptorSet.dstSet = descriptorSet;
+		imageInfoWriteDescriptorSet.dstBinding = 3;
+		imageInfoWriteDescriptorSet.descriptorCount = 1;
+		imageInfoWriteDescriptorSet.dstArrayElement = 0;
+		imageInfoWriteDescriptorSet.descriptorType = vk::DescriptorType::eUniformBuffer;
+		imageInfoWriteDescriptorSet.pBufferInfo = &imageInfoBufferInfo;
+			/*
+		vk::WriteDescriptorSet imageInfoWriteDescriptorSet{
+			descriptorSet,
+			3,
+			0,
+			1,
+			vk::DescriptorType::eUniformBuffer,
+			nullptr,
+			&imageInfoBufferInfo
+		};*/
 
 		writeDescriptorSets.push_back(inputWriteDescriptorSet);
 		writeDescriptorSets.push_back(outputWriteDescriptorSet);
+		writeDescriptorSets.push_back(kernelInfoWriteDescriptorSet);
+		writeDescriptorSets.push_back(imageInfoWriteDescriptorSet);
 
 		logicalDevice.updateDescriptorSets(writeDescriptorSets, {});
 	}
@@ -361,11 +513,18 @@ namespace swf {
 		};
 
 		queue.submit({ submitInfo }, fence);
-		logicalDevice.waitForFences({ fence }, true, UINT64_MAX);
+		vk::Result result = logicalDevice.waitForFences({ fence }, true, UINT64_MAX);
+
+		switch (result) {
+		case vk::Result::eSuccess:
+			break;
+		default:
+			throw std::runtime_error("ERROR: Wait for fences timed out");
+		}
 
 
 		uint8_t* imageOutput = new uint8_t[elements];
-		uint32_t* data = static_cast<uint32_t*>(logicalDevice.mapMemory(outputBufferMemory, 0, bufferSize));
+		uint32_t* data = static_cast<uint32_t*>(logicalDevice.mapMemory(outputBufferMemory, 0, ioBufferSize));
 
 		for (uint64_t i = 0; i < elements; ++i) {
 			imageOutput[i] = uint8_t(data[i]);
@@ -373,7 +532,7 @@ namespace swf {
 
 		logicalDevice.unmapMemory(outputBufferMemory);
 
-		stbi_write_jpg("img\\output.jpg", imageWidth, imageHeight, imageChannels, imageOutput, 100);
+		stbi_write_jpg("img\\output.jpg", imageInfo.width, imageInfo.height, imageInfo.channels, imageOutput, 100);
 
 		delete[] imageOutput;
 	}

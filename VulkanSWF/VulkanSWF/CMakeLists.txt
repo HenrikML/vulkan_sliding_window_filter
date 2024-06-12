@@ -28,7 +28,6 @@ else()
     message( "    path: ${Vulkan_GLSLC_EXECUTABLE}")
 endif()
 
-
 file(GLOB_RECURSE SHADERS ${PROJECT_SOURCE_DIR}/shaders/*.comp)
 foreach(SHADER ${SHADERS})
     get_filename_component(FILE_NAME ${SHADER} NAME)
@@ -36,12 +35,11 @@ foreach(SHADER ${SHADERS})
     add_custom_command(
         OUTPUT ${PROJECT_BINARY_DIR}/shaders/${FILE_NAME}.spv
         DEPENDS ${SHADER}
-        COMMAND ${Vulkan_GLSLC_EXECUTABLE} ${SHADER} -o ${PROJECT_BINARY_DIR}/shaders/${FILE_NAME}.spv
+        COMMAND ${Vulkan_GLSLANG_VALIDATOR_EXECUTABLE} -V ${SHADER} -o ${PROJECT_BINARY_DIR}/shaders/${FILE_NAME}.spv
         )
     #file(COPY ${PROJECT_SOURCE_DIR}/shaders/${FILE_NAME}.spv DESTINATION shaders)
     list(APPEND SPIRV_BINARY_FILES shaders/${FILE_NAME}.spv)
 endforeach(SHADER)
-
 
 file(GLOB_RECURSE SOURCES ${PROJECT_SOURCE_DIR}/src/*.cpp)
 file(COPY images/input.jpg DESTINATION img)

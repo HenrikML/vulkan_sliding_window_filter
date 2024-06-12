@@ -14,6 +14,7 @@ namespace swf {
 		SWFKernelType kernelType;
 		float sigma;				// Gaussian filter only
 	};
+
 	
 	class SWFKernel {
 	public:

@@ -1,4 +1,4 @@
-# Vulkan Sliding Window Filter
+# Vulkan Sliding Window Filter (WIP)
 
 Author: Henrik Lauronen
 
@@ -9,3 +9,8 @@ Requirements:
 ## Goals
 
 The aim of this project is to implement a basic image processing filter using the Vulkan API and GLSL shaders.
+
+## TODO:
+- Image convolution in compute shader
+- Pad image for filtering
+- Gaussian filter kernel

@@ -33,21 +33,20 @@ namespace swf {
 			createBoxFilter();
 			break;
 		}
-
 	}
 
 	void SWFKernel::createBoxFilter() {
 
 		float avg = 1 / float( (kernelWidth) * (kernelWidth) );
 
-		std::cout << "Creating Box Filter of size " << kernelWidth << "x" << kernelWidth << ":" << std::endl;
+		std::cout << "Creating Box Filter of size " << kernelWidth << "x" << kernelWidth << std::endl;
 
 		for (uint16_t i = 0; i < kernelWidth; ++i) {
 			for (uint16_t j = 0; j < kernelWidth; ++j) {
 				kernel[i + j * kernelWidth] = avg;
 			}
 		}
-		printKernel();
+		//printKernel();
 	}
 
 	void SWFKernel::createGaussianFilter(const float& sigma) {

@@ -11,7 +11,7 @@ int main() {
 	swf::SWFApplication application{"SWF"};
 
 	swf::SWFKernelConfiguration kernelConf = {};
-	kernelConf.kernelRadius = 2;
+	kernelConf.kernelRadius = 2; // Max 15
 	kernelConf.kernelType = swf::SWFKernelType::SWF_KERNEL_TYPE_BOX;
 
 	try {

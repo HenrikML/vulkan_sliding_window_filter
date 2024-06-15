@@ -54,7 +54,7 @@ namespace swf {
 		kernelInfo = {};
 		kernelInfo.data = kernel.getKernel();
 		kernelInfo.width = kernel.getKernelWidth();
-		kernelInfoWidthBufferSize = sizeof(uint32_t);
+		kernelInfoWidthBufferSize = 4 * sizeof(uint32_t);
 		kernelInfoDataBufferSize = 4 * 31 * 31 * sizeof(float);
 
 		createBuffers();
@@ -267,7 +267,7 @@ namespace swf {
 
 		uint32_t n = kernelInfo.width * kernelInfo.width;
 		for (uint32_t i = 0; i < n; ++i) {
-			kernelInfoData[i*4+3] = kernelInfo.data[i];
+			kernelInfoData[i*4] = kernelInfo.data[i];
 		}
 
 		logicalDevice.unmapMemory(kernelInfoBufferMemory);
@@ -513,7 +513,7 @@ namespace swf {
 		};
 
 		queue.submit({ submitInfo }, fence);
-		vk::Result result = logicalDevice.waitForFences({ fence }, true, UINT64_MAX);
+		vk::Result result = logicalDevice.waitForFences({ fence }, true, uint64_t(-1));
 
 		switch (result) {
 		case vk::Result::eSuccess:
@@ -525,6 +525,8 @@ namespace swf {
 
 		uint8_t* imageOutput = new uint8_t[elements];
 		uint32_t* data = static_cast<uint32_t*>(logicalDevice.mapMemory(outputBufferMemory, 0, ioBufferSize));
+
+		std::cout << data[0] << std::endl;
 
 		for (uint64_t i = 0; i < elements; ++i) {
 			imageOutput[i] = uint8_t(data[i]);

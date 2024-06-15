@@ -1,6 +1,6 @@
 #version 450
 
-#define MAX_KERNEL_WIDTH 11
+#define MAX_KERNEL_WIDTH 31
 
 layout(local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
 
@@ -23,19 +23,14 @@ layout(set = 0, binding = 3) uniform ImageInfo {
 	uint channels;
 } imageInfo;
 
-
-uint[MAX_KERNEL_WIDTH * MAX_KERNEL_WIDTH] padImage(uint kernel[MAX_KERNEL_WIDTH * MAX_KERNEL_WIDTH], 
-              const int KERNEL_ROW, 
+uint getImageIndex(const int KERNEL_ROW, 
               const int KERNEL_COL, 
               const int IMG_ROW, 
               const int IMG_COL,
               const uint IMG_CH) {
-    uint kernelIndex = KERNEL_COL + KERNEL_ROW * kernelInfo.width;
-    
     if ((IMG_COL < imageInfo.width && IMG_COL >= 0) && (IMG_ROW < imageInfo.height && IMG_ROW >= 0)) {
         uint imageIndex = IMG_CH + IMG_COL * imageInfo.channels + IMG_ROW * imageInfo.width * imageInfo.channels;
-        kernel[kernelIndex] = imageIndex;
-        return kernel;
+        return imageIndex;
     }
     
     int colDir = 0;
@@ -54,21 +49,7 @@ uint[MAX_KERNEL_WIDTH * MAX_KERNEL_WIDTH] padImage(uint kernel[MAX_KERNEL_WIDTH 
     }
     
     int copyIndex = (int(KERNEL_COL) - colDir) + (int(KERNEL_ROW) - rowDir) * int(kernelInfo.width);
-    kernel[kernelIndex] = kernel[copyIndex];
-    return kernel;
-}
-
-
-uint[MAX_KERNEL_WIDTH * MAX_KERNEL_WIDTH] createImagePatch(uint imageIndices[MAX_KERNEL_WIDTH * MAX_KERNEL_WIDTH]) {
-    uint imagePatch[MAX_KERNEL_WIDTH * MAX_KERNEL_WIDTH];
-    for (uint row = 0; row < kernelInfo.width; ++row) {
-        for (uint col = 0; col < kernelInfo.width; ++col) {
-            uint i = col + row * kernelInfo.width;
-
-            imagePatch[i] = inBuffer.data[imageIndices[i]];
-        }
-    }
-    return imagePatch;
+    return copyIndex;
 }
 
 uint convolvePatch(uint imagePatch[MAX_KERNEL_WIDTH * MAX_KERNEL_WIDTH]) {
@@ -102,8 +83,9 @@ void main() {
                     int kernelCol = colDir*col + int(kernelCenter);
                     int imgRow = rowDir*row + int(sampleRow);
                     int imgCol = colDir*col + int(sampleCol);
-                    
-                    imageIndices = padImage(imageIndices, kernelRow, kernelCol, imgRow, imgCol, sampleChannel);
+                    int i = kernelCol + kernelRow * int(kernelInfo.width);
+
+                    imageIndices[i] = getImageIndex(kernelRow, kernelCol, imgRow, imgCol, sampleChannel);
 
                     if (col == 0) {
                         break;
@@ -116,10 +98,24 @@ void main() {
         }
     }
 
-    uint imagePatch[MAX_KERNEL_WIDTH * MAX_KERNEL_WIDTH] = createImagePatch(imageIndices);
+    uint imagePatch[MAX_KERNEL_WIDTH * MAX_KERNEL_WIDTH];
+    for (uint row = 0; row < kernelInfo.width; ++row) {
+        for (uint col = 0; col < kernelInfo.width; ++col) {
+            uint i = col + row * kernelInfo.width;
 
-    uint outVal = convolvePatch(imagePatch);
-	outBuffer.data[sampleIndex] = outVal;
+            imagePatch[i] = inBuffer.data[imageIndices[i]];
+        }
+    }
+    
+    float sum = 0;
+    for (uint row = 0; row < kernelInfo.width; ++row) {
+        for (uint col = 0; col < kernelInfo.width; ++col) {
+            uint i = col + row * kernelInfo.width;
+            float imageVal = float(imagePatch[i]);
+            float kernelVal = kernelInfo.data[i];
+            sum += imageVal * kernelVal;
+        }
+    }
 
-	//outBuffer.data[sampleIndex] = inBuffer.data[sampleIndex];
+	outBuffer.data[sampleIndex] = uint(sum);
 }

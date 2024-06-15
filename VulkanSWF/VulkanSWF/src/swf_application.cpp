@@ -307,13 +307,6 @@ namespace swf {
 			binding.descriptorType = bufferInfo.type;
 			binding.descriptorCount = 1;
 			binding.stageFlags = vk::ShaderStageFlagBits::eCompute;
-			/*
-			vk::DescriptorSetLayoutBinding binding{
-				bufferInfo.binding,
-				bufferInfo.type,
-				1,
-				vk::ShaderStageFlagBits::eCompute
-			};*/
 
 			descriptorSetLayoutBindings.push_back(binding);
 		}
@@ -378,10 +371,6 @@ namespace swf {
 			}
 		};
 
-		/*vk::DescriptorPoolSize descriptorPoolSize{
-			vk::DescriptorType::eStorageBuffer,		// Descriptor Type
-			2										// Descriptor Count
-		};*/
 		vk::DescriptorPoolCreateInfo descriptorPoolCreateInfo = {};
 		descriptorPoolCreateInfo.flags = vk::DescriptorPoolCreateFlags();
 		descriptorPoolCreateInfo.poolSizeCount = descriptorPoolSizes.size();
@@ -457,16 +446,6 @@ namespace swf {
 		imageInfoWriteDescriptorSet.dstArrayElement = 0;
 		imageInfoWriteDescriptorSet.descriptorType = vk::DescriptorType::eUniformBuffer;
 		imageInfoWriteDescriptorSet.pBufferInfo = &imageInfoBufferInfo;
-			/*
-		vk::WriteDescriptorSet imageInfoWriteDescriptorSet{
-			descriptorSet,
-			3,
-			0,
-			1,
-			vk::DescriptorType::eUniformBuffer,
-			nullptr,
-			&imageInfoBufferInfo
-		};*/
 
 		writeDescriptorSets.push_back(inputWriteDescriptorSet);
 		writeDescriptorSets.push_back(outputWriteDescriptorSet);
@@ -526,11 +505,8 @@ namespace swf {
 			throw std::runtime_error("ERROR: Wait for fences timed out");
 		}
 
-
 		uint8_t* imageOutput = new uint8_t[elements];
 		uint32_t* data = static_cast<uint32_t*>(logicalDevice.mapMemory(outputBufferMemory, 0, ioBufferSize));
-
-		std::cout << data[0] << std::endl;
 
 		for (uint64_t i = 0; i < elements; ++i) {
 			imageOutput[i] = uint8_t(data[i]);

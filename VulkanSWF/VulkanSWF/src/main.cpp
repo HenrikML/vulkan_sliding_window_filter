@@ -12,7 +12,8 @@ int main() {
 
 	swf::SWFKernelConfiguration kernelConf = {};
 	kernelConf.kernelRadius = 7; // Max 15
-	kernelConf.kernelType = swf::SWFKernelType::SWF_KERNEL_TYPE_BOX;
+	kernelConf.kernelType = swf::SWFKernelType::SWF_KERNEL_TYPE_GAUSSIAN;
+	kernelConf.sigma = 4.0f;
 
 	try {
 		application.execute("img\\input.jpg", &kernelConf);

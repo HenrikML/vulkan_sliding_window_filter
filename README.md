@@ -12,9 +12,8 @@ The aim of this project is to implement a basic image processing filter using th
 
 ## Results
 ### Input:
-![Input image](input.jpg)
+![Input image](VulkanSWF\VulkanSWF\images)
 ### 15x15 Box filter:
-![Input filtered by a 15x15 box filter](output_box.jpg)
-
-## TODO:
-- Gaussian filter kernel
+![Input filtered by a 15x15 box filter](results\output_box.jpg)
+### 15x15 Gaussian filter (sigma = 4.0):
+![Input filtered by a 15x15 box filter](results\output_gaussian.jpg)

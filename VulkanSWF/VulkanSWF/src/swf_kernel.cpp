@@ -1,6 +1,7 @@
 #include "swf_kernel.h"
 #include <iostream>
 
+
 namespace swf {
 	SWFKernel::SWFKernel() {
 		kernelWidth = 1;
@@ -50,8 +51,28 @@ namespace swf {
 	}
 
 	void SWFKernel::createGaussianFilter(const float& sigma) {
-		// TODO: Create gaussian filter
-		createBoxFilter(); // Remove this once gaussian filter is implemented
+		double pi = 2 * asin(1.0);
+
+		double sum = 0.0;
+
+		for (uint16_t row = 0; row < kernelWidth; ++row) {
+			uint16_t y = abs(row - kernelWidth / 2);
+			for (uint16_t col = 0; col < kernelWidth; ++col) {
+				uint16_t x = abs(col - kernelWidth / 2);
+				double g1 = 1.0 / (2.0 * pi * sigma * sigma);
+				double g2 = -0.5 * (x * x + y * y) / (sigma * sigma);
+
+				kernel[col + row * kernelWidth] = g1 * exp(g2);
+				sum += kernel[col + row * kernelWidth];
+			}
+		}
+
+		for (uint16_t row = 0; row < kernelWidth; ++row) {
+			for (uint16_t col = 0; col < kernelWidth; ++col) {
+				kernel[col + row * kernelWidth] /= sum;
+			}
+		}
+		//printKernel();
 	}
 
 	void SWFKernel::printKernel() {

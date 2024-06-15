@@ -11,7 +11,7 @@ Requirements:
 The aim of this project is to implement a basic image processing filter using the Vulkan API and GLSL shaders.
 
 ## Results
-Input:
+###Input:
 ![Input image](input.jpg)
 ### 15x15 Box filter:
 ![Input filtered by a 15x15 box filter](output_box.jpg)

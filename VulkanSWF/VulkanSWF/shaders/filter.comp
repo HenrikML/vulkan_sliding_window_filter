@@ -23,16 +23,10 @@ layout(set = 0, binding = 3) uniform ImageInfo {
 	uint channels;
 } imageInfo;
 
-uint getImageIndex(const int KERNEL_ROW, 
+int getImageIndex(const int KERNEL_ROW, 
               const int KERNEL_COL, 
               const int IMG_ROW, 
-              const int IMG_COL,
-              const uint IMG_CH) {
-    if ((IMG_COL < imageInfo.width && IMG_COL >= 0) && (IMG_ROW < imageInfo.height && IMG_ROW >= 0)) {
-        uint imageIndex = IMG_CH + IMG_COL * imageInfo.channels + IMG_ROW * imageInfo.width * imageInfo.channels;
-        return imageIndex;
-    }
-    
+              const int IMG_COL) {  
     int colDir = 0;
     int rowDir = 0;
     if(IMG_COL < 0) {
@@ -48,21 +42,8 @@ uint getImageIndex(const int KERNEL_ROW,
         rowDir = 1;
     }
     
-    int copyIndex = (int(KERNEL_COL) - colDir) + (int(KERNEL_ROW) - rowDir) * int(kernelInfo.width);
+    int copyIndex = (KERNEL_COL - colDir) + (KERNEL_ROW - rowDir) * int(kernelInfo.width);
     return copyIndex;
-}
-
-uint convolvePatch(uint imagePatch[MAX_KERNEL_WIDTH * MAX_KERNEL_WIDTH]) {
-    float sum = 0;
-    for (uint row = 0; row < kernelInfo.width; ++row) {
-        for (uint col = 0; col < kernelInfo.width; ++col) {
-            uint i = col + row * kernelInfo.width;
-            float imageVal = float(imagePatch[i]);
-            float kernelVal = kernelInfo.data[i];
-            sum += imageVal * kernelVal;
-        }
-    }
-    return uint(sum);
 }
 
 void main() {
@@ -85,7 +66,13 @@ void main() {
                     int imgCol = colDir*col + int(sampleCol);
                     int i = kernelCol + kernelRow * int(kernelInfo.width);
 
-                    imageIndices[i] = getImageIndex(kernelRow, kernelCol, imgRow, imgCol, sampleChannel);
+                    if ((imgCol < int(imageInfo.width) && imgCol >= 0) && (imgRow < int(imageInfo.height) && imgRow >= 0)) {
+                        imageIndices[i] = uint(int(sampleChannel) + imgCol * int(imageInfo.channels) + imgRow * int(imageInfo.width) * int(imageInfo.channels));
+                    }
+                    else {
+                        int copyIndex = getImageIndex(kernelRow, kernelCol, imgRow, imgCol);
+                        imageIndices[i] = imageIndices[copyIndex];
+                    }
 
                     if (col == 0) {
                         break;
@@ -117,5 +104,5 @@ void main() {
         }
     }
 
-	outBuffer.data[sampleIndex] = uint(sum);
+	outBuffer.data[sampleIndex] = uint(floor(sum));
 }

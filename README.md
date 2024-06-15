@@ -1,4 +1,4 @@
-# Vulkan Sliding Window Filter (WIP)
+# Vulkan Sliding Window Filter
 
 Author: Henrik Lauronen
 

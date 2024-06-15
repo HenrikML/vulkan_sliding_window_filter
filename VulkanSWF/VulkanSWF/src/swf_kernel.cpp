@@ -1,5 +1,6 @@
 #include "swf_kernel.h"
 #include <iostream>
+#include <exception>
 
 
 namespace swf {
@@ -14,7 +15,12 @@ namespace swf {
 	}
 
 	void SWFKernel::setKernel(const SWFKernelConfiguration* configuration) {
+		if (configuration->kernelRadius > MAX_RADIUS) {
+			throw std::runtime_error("ERROR: Filter kernel radius has to be 0 - 15.");
+		}
+
 		uint16_t newWidth = configuration->kernelRadius * 2 + 1;
+
 		if (kernelWidth != newWidth) {
 			delete[] kernel;
 			kernelWidth = newWidth;
@@ -40,7 +46,7 @@ namespace swf {
 
 		float avg = 1 / float( (kernelWidth) * (kernelWidth) );
 
-		std::cout << "Creating Box Filter of size " << kernelWidth << "x" << kernelWidth << std::endl;
+		std::cout << "Creating Box Filter of size " << kernelWidth << "x" << kernelWidth << std::endl << std::endl;
 
 		for (uint16_t i = 0; i < kernelWidth; ++i) {
 			for (uint16_t j = 0; j < kernelWidth; ++j) {
@@ -51,6 +57,7 @@ namespace swf {
 	}
 
 	void SWFKernel::createGaussianFilter(const float& sigma) {
+		std::cout << "Creating Gaussian Filter of size " << kernelWidth << "x" << kernelWidth << std::endl << std::endl;
 		double pi = 2 * asin(1.0);
 
 		double sum = 0.0;

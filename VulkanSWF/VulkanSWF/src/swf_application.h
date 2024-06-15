@@ -37,7 +37,7 @@ namespace swf {
 		SWFApplication(std::string applicationName);
 		~SWFApplication();
 
-		void execute(const char* imagePath, const SWFKernelConfiguration* kernelConf);
+		void execute(const char* imagePath, const SWFKernelConfiguration* kernelConf, const char* outputPath);
 	private:
 		// Private variables
 		const std::string applicationName;
@@ -104,7 +104,7 @@ namespace swf {
 		void createPipeline();
 		void createDescriptorSet();
 		void createCommandBuffer();
-		void submitCommands();
+		void submitCommands(const char* outputPath);
 
 		// Helpers
 		int pickPhysicalDeviceHelper(const std::vector<vk::PhysicalDevice>& physicalDeviceVec) const;

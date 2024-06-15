@@ -19,7 +19,9 @@ namespace swf {
 	}
 
 	SWFApplication::~SWFApplication() {
-		logicalDevice.resetCommandPool(commandPool, vk::CommandPoolResetFlags());
+		if (commandPool != VK_NULL_HANDLE) {
+			logicalDevice.resetCommandPool(commandPool, vk::CommandPoolResetFlags());
+		}
 		logicalDevice.destroyFence(fence);
 		logicalDevice.destroyCommandPool(commandPool);
 		logicalDevice.destroyDescriptorPool(descriptorPool);
@@ -44,18 +46,22 @@ namespace swf {
 	}
 	
 	
-	void SWFApplication::execute(const char* imagePath, const SWFKernelConfiguration* kernelConf) {
-
+	void SWFApplication::execute(const char* imagePath, const SWFKernelConfiguration* kernelConf, const char* outputPath) {
 		if ( !readImage(imagePath) ) {
-			throw std::runtime_error("ERROR: Could not load image");
+			throw std::runtime_error("ERROR: Could not read image");
 		}
 
-		kernel.setKernel(kernelConf);
-		kernelInfo = {};
-		kernelInfo.data = kernel.getKernel();
-		kernelInfo.width = kernel.getKernelWidth();
-		kernelInfoWidthBufferSize = 4 * sizeof(uint32_t);
-		kernelInfoDataBufferSize = 4 * 31 * 31 * sizeof(float);
+		try {
+			kernel.setKernel(kernelConf);
+			kernelInfo = {};
+			kernelInfo.data = kernel.getKernel();
+			kernelInfo.width = kernel.getKernelWidth();
+			kernelInfoWidthBufferSize = 4 * sizeof(uint32_t);
+			kernelInfoDataBufferSize = 4 * 31 * 31 * sizeof(float);
+		}
+		catch (const std::exception& e) {
+			throw std::runtime_error(e.what());
+		}
 
 		createBuffers();
 		mapDataToMemory();
@@ -64,7 +70,7 @@ namespace swf {
 		createPipeline();
 		createDescriptorSet();
 		createCommandBuffer();
-		submitCommands();
+		submitCommands(outputPath);
 	}
 
 
@@ -150,10 +156,10 @@ namespace swf {
 
 		std::cout << "Image height: " << imageInfo.height << std::endl;
 		std::cout << "Image width: " << imageInfo.width << std::endl;
-		std::cout << "Color channels: " << imageInfo.channels << std::endl << std::endl;
+		std::cout << "Color channels: " << imageInfo.channels << std::endl;
 
 		elements = uint64_t(imageInfo.width) * uint64_t(imageInfo.height) * uint64_t(imageInfo.channels);
-		std::cout << "Total number of elements: " << elements << std::endl;
+		std::cout << "Total number of elements: " << elements << std::endl << std::endl;
 		ioBufferSize = elements * sizeof(uint32_t);
 		imageInfoBufferSize = sizeof(SWFImageInfo);
 
@@ -473,7 +479,7 @@ namespace swf {
 		commandBuffer = commandBuffers.front();
 	}
 
-	void SWFApplication::submitCommands() {
+	void SWFApplication::submitCommands(const char* outputPath) {
 		vk::CommandBufferBeginInfo commandBufferBeginInfo{ vk::CommandBufferUsageFlagBits::eOneTimeSubmit };
 		commandBuffer.begin(commandBufferBeginInfo);
 		commandBuffer.bindPipeline(vk::PipelineBindPoint::eCompute, pipeline);
@@ -514,7 +520,7 @@ namespace swf {
 
 		logicalDevice.unmapMemory(outputBufferMemory);
 
-		stbi_write_jpg("img\\output.jpg", imageInfo.width, imageInfo.height, imageInfo.channels, imageOutput, 100);
+		stbi_write_jpg(outputPath, imageInfo.width, imageInfo.height, imageInfo.channels, imageOutput, 100);
 
 		delete[] imageOutput;
 	}

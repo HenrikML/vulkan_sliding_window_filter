@@ -34,6 +34,8 @@ namespace swf {
 		float* kernel;		// 2D kernel represented as 1D array
 		uint16_t kernelWidth;
 
+		const uint8_t MAX_RADIUS = 15;
+
 		// Private Methods
 		void createBoxFilter();
 		void createGaussianFilter(const float& sigma);

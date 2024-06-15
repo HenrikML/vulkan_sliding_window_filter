@@ -42,7 +42,7 @@ namespace swf {
 		// Private variables
 		const std::string applicationName;
 
-		const uint32_t WORKGROUPS = 32;
+		const uint32_t WORKGROUPS = 256;
 
 		vk::Instance vulkanInstance;
 		vk::PhysicalDevice physicalDevice;

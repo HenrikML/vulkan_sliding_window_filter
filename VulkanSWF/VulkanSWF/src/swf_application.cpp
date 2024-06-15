@@ -153,6 +153,7 @@ namespace swf {
 		std::cout << "Color channels: " << imageInfo.channels << std::endl << std::endl;
 
 		elements = uint64_t(imageInfo.width) * uint64_t(imageInfo.height) * uint64_t(imageInfo.channels);
+		std::cout << "Total number of elements: " << elements << std::endl;
 		ioBufferSize = elements * sizeof(uint32_t);
 		imageInfoBufferSize = sizeof(SWFImageInfo);
 
@@ -498,7 +499,10 @@ namespace swf {
 		commandBuffer.begin(commandBufferBeginInfo);
 		commandBuffer.bindPipeline(vk::PipelineBindPoint::eCompute, pipeline);
 		commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eCompute, pipelineLayout, 0, { descriptorSet }, {});
-		commandBuffer.dispatch(elements / WORKGROUPS, 1, 1);
+
+		uint32_t groupCountX = 1 + (elements - 1) / WORKGROUPS;
+
+		commandBuffer.dispatch(groupCountX + 1, 1, 1);
 		commandBuffer.end();
 
 		vk::Queue queue = logicalDevice.getQueue(computeQueueFamilyIndex, 0);

@@ -42,7 +42,7 @@ namespace swf {
 		// Private variables
 		const std::string applicationName;
 
-		const uint32_t WORKGROUPS = 256;
+		const uint32_t WORKGROUPS = 32;
 
 		vk::Instance vulkanInstance;
 		vk::PhysicalDevice physicalDevice;
@@ -97,6 +97,7 @@ namespace swf {
 		void createLogicalDevice();
 		
 		void createBuffers();
+		void createKernel(const SWFKernelConfiguration* kernelConf);
 		bool readImage(const char* imagePath);
 		void mapDataToMemory();
 		void createShaderModule();
@@ -105,6 +106,8 @@ namespace swf {
 		void createDescriptorSet();
 		void createCommandBuffer();
 		void submitCommands(const char* outputPath);
+
+		void cleanUp();
 
 		// Helpers
 		int pickPhysicalDeviceHelper(const std::vector<vk::PhysicalDevice>& physicalDeviceVec) const;
